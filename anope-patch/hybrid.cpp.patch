@@ -1,34 +1,33 @@
---- a/modules/protocol/hybrid.cpp
-+++ b/modules/protocol/hybrid.cpp
-@@ -15,6 +15,7 @@
-
+--- a/modules/protocol/hybrid.cpp	2026-02-15 05:54:45.029498497 +0100
++++ b/modules/protocol/hybrid.cpp	2026-02-15 05:35:03.708091000 +0100
+@@ -15,11 +15,13 @@
+ 
  #include "module.h"
  #include "modules/chanserv/mode.h"
 +#include "modules/nickserv/sasl.h"
-
+ 
  static Anope::string UplinkSID;
-
-@@ -20,10 +21,11 @@
-
+ 
  class HybridProto final
  	: public IRCDProto
 +	, SASL::ProtocolInterface
  {
  	void SendSVSKill(const MessageSource &source, User *u, const Anope::string &buf) override
  	{
-@@ -30,7 +32,7 @@
-
+@@ -28,7 +30,7 @@
+ 	}
+ 
  public:
 -	HybridProto(Module *creator) : IRCDProto(creator, "ircd-hybrid 8.2.34+")
 +	HybridProto(Module *creator) : IRCDProto(creator, "ircd-hybrid 8.2.34+"), SASL::ProtocolInterface(creator)
  	{
  		DefaultPseudoclientModes = "+oi";
  		CanSVSNick = true;
-@@ -273,6 +275,44 @@
-
- 		return true;
+@@ -270,6 +272,29 @@
+ 		Uplink::Send("SVSHOST", u->GetUID(), u->timestamp, u->host);
  	}
-+
+ 
++	/* SASL protocol interface methods */
 +	void SendSASLMessage(const SASL::Message &message) override
 +	{
 +		Server *s = Server::Find(message.target.substr(0, 3));
@@ -47,45 +46,27 @@
 +		if (na)
 +		{
 +			Uplink::Send("ENCAP", target, "SVSLOGIN", uid, '*', '*',
-+				na->GetVHostHost().empty() ? "*" : na->GetVHostHost(),
-+				na->nc->display);
-+		}
-+		else
-+		{
-+			Uplink::Send("SVSACCOUNT", uid, 0, '*');
++				na->GetVHostHost().empty() ? "*" : na->GetVHostHost(), na->nc->display);
 +		}
 +	}
 +
-+	void SendSASLMechanisms(std::vector<Anope::string> &mechs) override
-+	{
-+		Anope::string mechlist;
-+		for (unsigned i = 0; i < mechs.size(); ++i)
-+			mechlist += (i > 0 ? "," : "") + mechs[i];
-+		Uplink::Send("ENCAP", '*', "MECHLIST", mechlist);
-+	}
- };
-
- struct IRCDMessageBMask final
-@@ -630,6 +670,33 @@
+ 	bool IsExtbanValid(const Anope::string &mask) override
+ 	{
+ 		return mask.length() >= 4 && mask[0] == '$' && mask[2] == ':';
+@@ -649,6 +674,28 @@
  	}
  };
-
+ 
 +struct IRCDMessageEncap final
 +	: IRCDMessage
 +{
-+	IRCDMessageEncap(Module *creator) : IRCDMessage(creator, "ENCAP", 3) { SetFlag(FLAG_REQUIRE_SERVER); SetFlag(FLAG_SOFT_LIMIT); }
++	IRCDMessageEncap(Module *creator) : IRCDMessage(creator, "ENCAP", 4) { SetFlag(FLAG_REQUIRE_SERVER); SetFlag(FLAG_SOFT_LIMIT); }
 +
++	/*                                0 1    2         3         4    5      */
++	/* :0MC ENCAP services.chatik.pl  * SASL 0MCAAAAAB *         S    PLAIN  */
++	/* :0MC ENCAP services.chatik.pl  * SASL 0MCAAAAAB 0MCAAAAAC C    base64 */
 +	void Run(MessageSource &source, const std::vector<Anope::string> &params, const Anope::map<Anope::string> &tags) override
 +	{
-+		/*
-+		 * Received: :0MC ENCAP * SASL 0MCAAAAAB * S PLAIN
-+		 * params[0] = *
-+		 * params[1] = SASL
-+		 * params[2] = source uid
-+		 * params[3] = target uid
-+		 * params[4] = type (S/C/D/H)
-+		 * params[5+] = data
-+		 */
 +		if (params[1] == "SASL" && SASL::service && params.size() >= 6)
 +		{
 +			SASL::Message m;
@@ -98,21 +79,22 @@
 +	}
 +};
 +
- struct IRCDMessageUID final
- 	: IRCDMessage
+ class ProtoHybrid final
+ 	: public Module
  {
-@@ -653,6 +720,7 @@
-
+@@ -677,6 +724,7 @@
  	/* Our message handlers */
  	IRCDMessageBMask message_bmask;
-+	IRCDMessageEncap message_encap;
  	IRCDMessageCapab message_capab;
++	IRCDMessageEncap message_encap;
  	IRCDMessageCertFP message_certfp;
  	IRCDMessageEOB message_eob;
-@@ -689,6 +757,7 @@
+ 	IRCDMessageJoin message_join;
+@@ -774,6 +822,7 @@
  		message_whois(this),
  		message_bmask(this),
-+		message_encap(this),
  		message_capab(this),
++		message_encap(this),
  		message_certfp(this),
  		message_eob(this),
+ 		message_join(this),
