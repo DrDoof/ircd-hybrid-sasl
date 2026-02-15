@@ -1,0 +1,4 @@
+anope-patch/anope-src/
+.anope-src-patched
+*.so
+*.o
