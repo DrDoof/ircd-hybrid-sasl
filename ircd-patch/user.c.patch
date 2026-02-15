@@ -1,0 +1,26 @@
+--- a/src/user.c
++++ b/src/user.c
+@@ -293,10 +293,15 @@
+     }
+   }
+
+-  const char *id;
+-  while (hash_find_id((id = uid_get())))
+-    ;
+-
+-  strlcpy(client->id, id, sizeof(client->id));
+-  hash_add_id(client);
++  /* Guard: skip UID assignment if already set (e.g. by m_sasl.c during
++   * early AUTHENTICATE handling). Without this check, the UID would be
++   * overwritten and a duplicate hash entry created. */
++  if (client->id[0] == '\0')
++  {
++    const char *id;
++    while (hash_find_id((id = uid_get())))
++      ;
++
++    strlcpy(client->id, id, sizeof(client->id));
++    hash_add_id(client);
++  }
+
+   hook_dispatch(ircd_hook_user_register_local, &(ircd_hook_user_register_ctx){ .client = client });
