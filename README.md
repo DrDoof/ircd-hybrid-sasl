@@ -52,24 +52,22 @@ Client              ircd-hybrid (m_sasl.so)        Anope (patched hybrid.cpp)
 ## Repository layout
 
 ```
-docker/                     ircd-hybrid Docker build context
-  Dockerfile                  builds ircd-hybrid 8.2.47 + m_sasl + user.c patch
-  m_sasl.c                    SASL module source (copy of ircd-module/m_sasl.c)
-  patch_user.awk              awk script to patch user.c UID guard
-  user.c.patch                same patch in unified diff format
+Makefile                      top-level: make build / build-ircd / build-anope / test
 
 ircd-module/
-  m_sasl.c                    canonical SASL module source
+  m_sasl.c                    SASL module source (single canonical copy)
   Makefile                    standalone build (inside container or cross-compile)
 
 ircd-patch/
   user.c.patch                3-line UID guard for src/user.c
 
+docker/
+  Dockerfile                  ircd-hybrid 8.2.47 + m_sasl + user.c patch
+  patch_user.awk              awk script to apply user.c UID guard during build
+
 anope-patch/
   hybrid.cpp.patch            unified diff for Anope's modules/protocol/hybrid.cpp
-  Dockerfile                  Anope Docker build (used by make build-anope)
-
-Makefile                      top-level: make build / build-ircd / build-anope / test
+  Dockerfile                  Anope multi-stage Docker build
 ```
 
 ## Limits

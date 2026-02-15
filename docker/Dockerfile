@@ -26,7 +26,7 @@ RUN wget https://github.com/ircd-hybrid/ircd-hybrid/archive/refs/tags/8.2.47.tar
 
 # Apply SASL UID guard: wrap UID assignment in if (client->id[0] == '\0')
 # This prevents duplicate UID when m_sasl.c assigns UID early during AUTHENTICATE
-COPY patch_user.awk /tmp/
+COPY docker/patch_user.awk /tmp/
 RUN cd /tmp/ircd-hybrid-8.2.47/src && \
     gawk -f /tmp/patch_user.awk user.c > user.c.tmp && \
     mv user.c.tmp user.c && \
@@ -41,7 +41,7 @@ RUN cd /tmp/ircd-hybrid-8.2.47 && \
     make install
 
 # Compile m_sasl.so against the source tree (before cleanup)
-COPY m_sasl.c /tmp/
+COPY ircd-module/m_sasl.c /tmp/
 RUN cd /tmp && \
     gcc -O2 -Wall -fPIC -shared \
         -I/tmp/ircd-hybrid-8.2.47 \

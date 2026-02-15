@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY anope-src /tmp/anope
 WORKDIR /tmp/anope
 
-RUN cd build && \
+RUN mkdir -p build && cd build && \
     cmake -DINSTDIR=/opt/anope -DUSE_PCH=OFF .. && \
     make -j$(nproc) && \
     make install

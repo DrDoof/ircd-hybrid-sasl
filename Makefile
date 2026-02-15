@@ -22,7 +22,7 @@ build: build-ircd build-anope
 build-ircd:
 	docker build --platform $(PLATFORM) \
 		-t $(IRCD_IMAGE) \
-		-f docker/Dockerfile docker/
+		-f docker/Dockerfile .
 
 # --- Anope with SASL patch ---
 
