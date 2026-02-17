@@ -1,0 +1,11 @@
+--- a/libio/src/match.c
++++ b/libio/src/match.c
+@@ -479,7 +479,7 @@
+ /* { */      PRINT_C|ALPHA_C|NICK_C|CHAN_C|VCHAN_C|NONEOS_C|USER_C,
+ /* | */      PRINT_C|ALPHA_C|NICK_C|CHAN_C|VCHAN_C|NONEOS_C|USER_C,
+ /* } */      PRINT_C|ALPHA_C|NICK_C|CHAN_C|VCHAN_C|NONEOS_C|USER_C,
+-/* ~ */      PRINT_C|ALPHA_C|CHAN_C|VCHAN_C|NONEOS_C|USER_C,
++/* ~ */      PRINT_C|ALPHA_C|NICK_C|CHAN_C|VCHAN_C|NONEOS_C|USER_C,
+ /* del  */   CHAN_C|VCHAN_C|NONEOS_C,
+ /* 0x80 */   CHAN_C|VCHAN_C|NONEOS_C,
+ /* 0x81 */   CHAN_C|VCHAN_C|NONEOS_C,
